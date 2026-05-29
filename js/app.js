@@ -40,8 +40,40 @@ function navigate(path) {
 function setActiveNav() {
   const { path } = parseHash();
   const segment = path.split("/")[1] || "home";
-  document.querySelectorAll(".main-nav a").forEach((a) => {
+  document.querySelectorAll(".nav-link").forEach((a) => {
     a.classList.toggle("active", a.dataset.nav === segment || (segment === "" && a.dataset.nav === "home"));
+  });
+}
+
+function pageHeader(title, subtitle) {
+  return `
+    <div class="page-header">
+      <h1 class="page-title">${title}</h1>
+      ${subtitle ? `<p class="page-subtitle">${subtitle}</p>` : ""}
+    </div>`;
+}
+
+const DOMAIN_COLORS = {
+  I: "#7c3aed",
+  II: "#2563eb",
+  III: "#06b6d4",
+  IV: "#10b981",
+  V: "#f59e0b",
+};
+
+function initNavToggle() {
+  const toggle = document.getElementById("nav-toggle");
+  const links = document.getElementById("nav-links");
+  if (!toggle || !links) return;
+  toggle.onclick = () => {
+    const open = links.classList.toggle("open");
+    toggle.setAttribute("aria-expanded", open ? "true" : "false");
+  };
+  links.querySelectorAll(".nav-link").forEach((link) => {
+    link.addEventListener("click", () => {
+      links.classList.remove("open");
+      toggle.setAttribute("aria-expanded", "false");
+    });
   });
 }
 
@@ -50,53 +82,79 @@ function renderHome() {
   const customCount = getCustomDecks().reduce((n, d) => n + (d.cards?.length || 0), 0);
 
   main.innerHTML = `
-    <h1 class="page-title">Study for the CIPP/US Exam</h1>
-    <p class="page-subtitle">
-      Interactive flashcards, quizzes, and exam simulation aligned with the five IAPP Body of Knowledge domains.
-      ${EXAM_INFO.questions} questions · ${EXAM_INFO.durationMinutes / 60} hours · passing score ${EXAM_INFO.passingScore}/${EXAM_INFO.maxScore}.
-    </p>
+    <div class="page-home">
+      <section class="hero-section">
+        <div class="hero-mesh" aria-hidden="true">
+          <div class="mesh-orb mesh-orb--purple"></div>
+          <div class="mesh-orb mesh-orb--blue"></div>
+        </div>
+        <div class="hero-grid-overlay" aria-hidden="true"></div>
+        <div class="hero-content">
+          <div class="hero-eyebrow">
+            <span class="eyebrow-dot"></span>
+            <span>Exam Preparation</span>
+          </div>
+          <h1 class="hero-title page-title">
+            Study for the <span class="gradient-text">CIPP/US</span> Exam
+          </h1>
+          <p class="hero-sub page-subtitle">
+            Interactive flashcards, quizzes, and exam simulation aligned with the five IAPP Body of Knowledge domains.
+            ${EXAM_INFO.questions} questions · ${EXAM_INFO.durationMinutes / 60} hours · passing score ${EXAM_INFO.passingScore}/${EXAM_INFO.maxScore}.
+          </p>
+          <div class="hero-ctas">
+            <a href="#/quiz" class="btn btn-primary btn-lg">Practice Quiz</a>
+            <a href="#/flashcards" class="btn btn-ghost btn-lg">Study Flashcards</a>
+            <a href="#/exam" class="btn btn-ghost btn-lg hero-cta-exam">Exam Simulation</a>
+          </div>
+          <div class="home-stats stats-row">
+            <div class="stat-card"><div class="stat-card-value value">${stats.known}</div><div class="stat-card-label label">Cards mastered</div></div>
+            <div class="stat-card"><div class="stat-card-value value">${stats.learning}</div><div class="stat-card-label label">Still learning</div></div>
+            <div class="stat-card"><div class="stat-card-value value">${stats.streak}</div><div class="stat-card-label label">Day streak</div></div>
+            <div class="stat-card"><div class="stat-card-value value">${FLASHCARDS.length + customCount}</div><div class="stat-card-label label">Total cards</div></div>
+          </div>
+        </div>
+      </section>
 
-    <div class="stats-row">
-      <div class="stat-card"><div class="value">${stats.known}</div><div class="label">Cards mastered</div></div>
-      <div class="stat-card"><div class="value">${stats.learning}</div><div class="label">Still learning</div></div>
-      <div class="stat-card"><div class="value">${stats.streak}</div><div class="label">Day streak</div></div>
-      <div class="stat-card"><div class="value">${FLASHCARDS.length + customCount}</div><div class="label">Total cards</div></div>
-    </div>
+      <div class="container domains-section">
+        <div class="section-intro">
+          <h2 class="section-title">Exam domains (by blueprint weight)</h2>
+          <p class="section-desc">Click a domain to start a focused quiz</p>
+        </div>
+        <div class="domain-grid domain-cards-grid">
+          ${DOMAINS.map(
+            (d) => `
+          <a href="#/flashcards?domain=${d.id}" class="domain-card" style="--domain-color: ${DOMAIN_COLORS[d.id]}">
+            <span class="domain-badge">Domain ${d.id} · ${d.weight}</span>
+            <h3 class="domain-card-name">${escapeHtml(d.shortTitle)}</h3>
+            <p>${escapeHtml(d.description)}</p>
+            <div class="domain-card-progress weight-bar">
+              <div class="domain-card-bar-wrap">
+                <div class="domain-card-bar weight-fill" style="width:${d.weightNum}%"></div>
+              </div>
+            </div>
+          </a>`
+          ).join("")}
+        </div>
 
-    <div class="mode-cards">
-      <a href="#/flashcards" class="mode-card">
-        <div class="icon">📇</div>
-        <h3>Flashcards</h3>
-        <p>Flip cards, mark progress, filter by domain</p>
-      </a>
-      <a href="#/quiz" class="mode-card">
-        <div class="icon">✓</div>
-        <h3>Practice Quiz</h3>
-        <p>Multiple-choice with explanations</p>
-      </a>
-      <a href="#/exam" class="mode-card">
-        <div class="icon">⏱</div>
-        <h3>Exam Simulation</h3>
-        <p>Timed practice · ${EXAM_INFO.questions}-question format</p>
-      </a>
-      <a href="#/progress" class="mode-card">
-        <div class="icon">📊</div>
-        <h3>Progress</h3>
-        <p>Track scores and domain mastery</p>
-      </a>
-    </div>
-
-    <h2 class="section-title">Exam domains (by blueprint weight)</h2>
-    <div class="domain-grid">
-      ${DOMAINS.map(
-        (d) => `
-        <a href="#/flashcards?domain=${d.id}" class="domain-card">
-          <span class="domain-badge">Domain ${d.id} · ${d.weight}</span>
-          <h3>${escapeHtml(d.shortTitle)}</h3>
-          <p>${escapeHtml(d.description)}</p>
-          <div class="weight-bar"><div class="weight-fill" style="width:${d.weightNum}%"></div></div>
-        </a>`
-      ).join("")}
+        <div class="mode-cards">
+          <a href="#/flashcards" class="mode-card card">
+            <h3>Flashcards</h3>
+            <p>Flip cards, mark progress, filter by domain</p>
+          </a>
+          <a href="#/quiz" class="mode-card card">
+            <h3>Practice Quiz</h3>
+            <p>Multiple-choice with explanations</p>
+          </a>
+          <a href="#/exam" class="mode-card card">
+            <h3>Exam Simulation</h3>
+            <p>Timed practice · ${EXAM_INFO.questions}-question format</p>
+          </a>
+          <a href="#/progress" class="mode-card card">
+            <h3>Progress</h3>
+            <p>Track scores and domain mastery</p>
+          </a>
+        </div>
+      </div>
     </div>
   `;
 }
@@ -137,8 +195,7 @@ function renderFlashcards() {
   }
 
   main.innerHTML = `
-    <h1 class="page-title">Flashcards</h1>
-    <p class="page-subtitle">Click the card to flip. Rate yourself to track mastery.</p>
+    ${pageHeader("Flashcards", "Click the card to flip. Rate yourself to track mastery.")}
 
     <div class="study-toolbar">
       <select class="filter-select" id="domain-filter">
@@ -295,8 +352,7 @@ function renderQuiz() {
   }
 
   main.innerHTML = `
-    <h1 class="page-title">Practice Quiz</h1>
-    <p class="page-subtitle">Scenario-style multiple choice with explanations — like the real exam.</p>
+    ${pageHeader("Practice Quiz", "Scenario-style multiple choice with explanations — like the real exam.")}
 
     <div class="study-toolbar">
       <select class="filter-select" id="quiz-domain">
@@ -372,11 +428,10 @@ function renderExam() {
     if (examTimerId) clearInterval(examTimerId);
     examState = null;
     main.innerHTML = `
-      <h1 class="page-title">Exam Simulation</h1>
-      <p class="page-subtitle">
-        Practice under exam-like conditions: ${EXAM_INFO.questions} questions in ${EXAM_INFO.durationMinutes} minutes.
-        This session uses ${Math.min(25, getQuizByDomain("all", 25).length)} questions for a focused practice run.
-      </p>
+      ${pageHeader(
+        "Exam Simulation",
+        `Practice under exam-like conditions: ${EXAM_INFO.questions} questions in ${EXAM_INFO.durationMinutes} minutes. This session uses ${Math.min(25, getQuizByDomain("all", 25).length)} questions for a focused practice run.`
+      )}
       <div class="quiz-card" style="max-width:520px">
         <ul style="color:var(--text-muted);padding-left:1.2rem">
           <li>Multiple choice, one best answer</li>
@@ -504,8 +559,7 @@ function renderProgress() {
   });
 
   main.innerHTML = `
-    <h1 class="page-title">Your Progress</h1>
-    <p class="page-subtitle">Stored locally in your browser — export to back up or share with study groups.</p>
+    ${pageHeader("Your Progress", "Stored locally in your browser — export to back up or share with study groups.")}
 
     <div class="stats-row">
       <div class="stat-card"><div class="value">${stats.known}</div><div class="label">Cards mastered</div></div>
@@ -591,8 +645,7 @@ function renderDecks() {
   const decks = getCustomDecks();
 
   main.innerHTML = `
-    <h1 class="page-title">My Decks</h1>
-    <p class="page-subtitle">Create custom flashcards for your study group. Cards are saved in your browser.</p>
+    ${pageHeader("My Decks", "Create custom flashcards for your study group. Cards are saved in your browser.")}
 
     <form id="add-card-form" class="quiz-card" style="max-width:560px;margin-bottom:2rem">
       <h3 style="margin-top:0">Add a custom card</h3>
@@ -706,4 +759,7 @@ function router() {
 }
 
 window.addEventListener("hashchange", router);
-window.addEventListener("load", router);
+window.addEventListener("load", () => {
+  initNavToggle();
+  router();
+});
